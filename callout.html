@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cricket Shot Callouts</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f4f8;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 30px;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+      font-size: 2rem;
+    }
+
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+
+    select, button {
+      padding: 10px;
+      font-size: 1rem;
+      width: 220px;
+    }
+
+    #shotDisplay {
+      font-size: 2.5rem;
+      margin-top: 40px;
+      text-align: center;
+      background: #ffffff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      min-height: 80px;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    button {
+      background-color: #0077cc;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #005fa3;
+    }
+  </style>
+</head>
+<body>
+  <h1>🏏 Cricket Shot Callouts</h1>
+
+  <div class="controls">
+    <select id="categorySelect">
+      <option value="opening">Opening Bowling (Pace)</option>
+      <option value="middle">Middle Overs (Spin)</option>
+      <option value="death">Death Overs (Pace)</option>
+    </select>
+
+    <select id="speedSelect">
+      <option value="0.7">Slow</option>
+      <option value="1.0" selected>Normal</option>
+      <option value="1.4">Fast</option>
+    </select>
+
+    <select id="intervalSelect">
+      <option value="3000">Every 3 seconds</option>
+      <option value="5000" selected>Every 5 seconds</option>
+      <option value="8000">Every 8 seconds</option>
+    </select>
+
+    <button id="startBtn">Start</button>
+    <button id="stopBtn" disabled>Stop</button>
+  </div>
+
+  <div id="shotDisplay">Get Ready...</div>
+
+  <script>
+    // Shot data
+    const openingBowlingShots = [
+      { shot: "Front Foot Defense", weight: 23 },
+      { shot: "Back Foot Defense", weight: 23 },
+      { shot: "Leave", weight: 18 },
+      { shot: "Cover Drive", weight: 10 },
+      { shot: "Straight Drive", weight: 10 },
+      { shot: "Fine Leg Flick", weight: 5 },
+      { shot: "Pull Shot", weight: 3 },
+      { shot: "Dance Down", weight: 3 },
+      { shot: "Duck", weight: 5 }
+    ];
+
+    const middleOversSpinShots = [
+      { shot: "Drop and Run", weight: 15 },
+      { shot: "Cover Drive", weight: 12 },
+      { shot: "Cut", weight: 12 },
+      { shot: "Pull", weight: 10 },
+      { shot: "Flick", weight: 10 },
+      { shot: "Dance Down", weight: 10 },
+      { shot: "Backfoot Punch", weight: 10 },
+      { shot: "Backfoot Defense", weight: 8 },
+      { shot: "Frontfoot Defense", weight: 8 },
+      { shot: "Reverse Sweep", weight: 3 },
+      { shot: "Paddle Sweep", weight: 2 }
+    ];
+
+    const deathOversPaceShots = [
+      { shot: "Cut", weight: 15 },
+      { shot: "Cover Drive", weight: 15 },
+      { shot: "Dance Down", weight: 14 },
+      { shot: "Drop and Run", weight: 12 },
+      { shot: "Pull Shot", weight: 14 },
+      { shot: "Big Shot", weight: 10 },
+      { shot: "Yorker Defense", weight: 10 },
+      { shot: "Scoop", weight: 10 }
+    ];
+
+    let calloutInterval;
+    const categorySelect = document.getElementById("categorySelect");
+    const speedSelect = document.getElementById("speedSelect");
+    const intervalSelect = document.getElementById("intervalSelect");
+    const shotDisplay = document.getElementById("shotDisplay");
+    const startBtn = document.getElementById("startBtn");
+    const stopBtn = document.getElementById("stopBtn");
+
+    function getWeightedRandomShot(shotList) {
+      const totalWeight = shotList.reduce((sum, shot) => sum + shot.weight, 0);
+      const rand = Math.random() * totalWeight;
+      let runningWeight = 0;
+
+      for (const shot of shotList) {
+        runningWeight += shot.weight;
+        if (rand <= runningWeight) return shot.shot;
+      }
+    }
+
+    function getSelectedShots() {
+      const category = categorySelect.value;
+      if (category === "opening") return openingBowlingShots;
+      if (category === "middle") return middleOversSpinShots;
+      if (category === "death") return deathOversPaceShots;
+    }
+
+    function callOutShot() {
+      const shots = getSelectedShots();
+      const shot = getWeightedRandomShot(shots);
+      shotDisplay.innerText = shot;
+
+      const utterance = new SpeechSynthesisUtterance(shot);
+      utterance.rate = parseFloat(speedSelect.value);
+      speechSynthesis.speak(utterance);
+    }
+
+    startBtn.addEventListener("click", () => {
+      const intervalTime = parseInt(intervalSelect.value);
+      callOutShot(); // immediate callout
+      calloutInterval = setInterval(callOutShot, intervalTime);
+      startBtn.disabled = true;
+      stopBtn.disabled = false;
+    });
+
+    stopBtn.addEventListener("click", () => {
+      clearInterval(calloutInterval);
+      speechSynthesis.cancel();
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+      shotDisplay.innerText = "Get Ready...";
+    });
+  </script>
+</body>
+</html>
